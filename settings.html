@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ollama Page Assistant — Settings</title>
+    <link rel="stylesheet" href="settings.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="page-header">
+        <h1 class="page-title">
+          <span class="logo" aria-hidden="true">◈</span>
+          Page Assistant — Settings
+        </h1>
+      </header>
+
+      <main class="main">
+        <!-- ── Ollama connection ─────────────────────────────────── -->
+        <section class="card">
+          <h2 class="card-title">Ollama Connection</h2>
+
+          <div class="field">
+            <label class="label" for="endpoint-input">Server endpoint</label>
+            <div class="input-row">
+              <input
+                id="endpoint-input"
+                class="input"
+                type="url"
+                placeholder="http://localhost:11434"
+                spellcheck="false"
+              />
+              <button id="test-btn" type="button" class="btn btn-outline">Test</button>
+            </div>
+            <p id="connection-status" class="field-hint" aria-live="polite"></p>
+          </div>
+        </section>
+
+        <!-- ── Models ────────────────────────────────────────────── -->
+        <section class="card">
+          <h2 class="card-title">Models</h2>
+
+          <div id="models-loading" class="loading-row" hidden>
+            <span class="spinner" aria-hidden="true"></span> Fetching models from Ollama…
+          </div>
+
+          <div id="models-error" class="inline-msg msg-error" hidden></div>
+
+          <div id="models-content">
+            <div class="field">
+              <label class="label" for="default-model-select">Default model</label>
+              <div class="input-row">
+                <select id="default-model-select" class="select"></select>
+                <button
+                  id="refresh-models-btn"
+                  type="button"
+                  class="btn btn-outline"
+                  title="Refresh model list from Ollama"
+                >
+                  ↻ Refresh
+                </button>
+              </div>
+              <p class="field-hint">Used for all pages unless overridden below.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── Summary ──────────────────────────────────────────── -->
+        <section class="card">
+          <h2 class="card-title">Summary</h2>
+
+          <fieldset class="field">
+            <legend class="label">Detail level</legend>
+            <div class="segmented">
+              <label class="seg-option">
+                <input type="radio" name="summary-detail" value="brief" />
+                <span>Brief</span>
+              </label>
+              <label class="seg-option">
+                <input type="radio" name="summary-detail" value="standard" />
+                <span>Standard</span>
+              </label>
+              <label class="seg-option">
+                <input type="radio" name="summary-detail" value="detailed" />
+                <span>Detailed</span>
+              </label>
+            </div>
+            <p class="field-hint">
+              <strong>Brief</strong> — 2–3 sentence overview &nbsp;·&nbsp;
+              <strong>Standard</strong> — 3–5 paragraphs covering main points &nbsp;·&nbsp;
+              <strong>Detailed</strong> — thorough breakdown with key points &amp; bullet points
+            </p>
+          </fieldset>
+        </section>
+
+        <!-- ── Per-page model overrides ──────────────────────────── -->
+        <section class="card">
+          <h2 class="card-title">Per-page Model Overrides</h2>
+          <p class="card-desc">
+            When you change the model in the side panel while viewing a page, it's saved here.
+          </p>
+
+          <div id="page-models-empty" class="empty-state" hidden>
+            No per-page overrides saved yet.
+          </div>
+          <table id="page-models-table" class="overrides-table" hidden>
+            <thead>
+              <tr>
+                <th>Page URL</th>
+                <th>Model</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="page-models-body"></tbody>
+          </table>
+        </section>
+
+        <!-- ── Saved element selections ──────────────────────────── -->
+        <section class="card">
+          <h2 class="card-title">Saved Element Selections</h2>
+          <p class="card-desc">
+            Elements you've picked on specific pages. Cleared automatically when you click "Clear"
+            in the panel.
+          </p>
+
+          <div id="selections-empty" class="empty-state" hidden>No saved selections yet.</div>
+          <table id="selections-table" class="overrides-table" hidden>
+            <thead>
+              <tr>
+                <th>Page URL</th>
+                <th>Selector</th>
+                <th>Saved</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="selections-body"></tbody>
+          </table>
+        </section>
+      </main>
+
+      <!-- ── Footer ───────────────────────────────────────────────── -->
+      <footer class="footer">
+        <button id="save-btn" type="button" class="btn btn-primary">Save Settings</button>
+        <span id="save-status" class="save-status" aria-live="polite"></span>
+      </footer>
+    </div>
+    <!-- /#app -->
+
+    <script src="settings.js"></script>
+  </body>
+</html>

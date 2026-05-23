@@ -1,0 +1,18 @@
+{
+  "name": "ollama-page-assistant",
+  "version": "1.0.0",
+  "description": "Chrome extension for summarizing and chatting with web pages using a local Ollama instance",
+  "scripts": {
+    "setup": "node scripts/setup.js",
+    "lint": "oxlint .",
+    "format": "oxfmt --write .",
+    "check": "oxlint . && oxfmt --check ."
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.6.0"
+  },
+  "devDependencies": {
+    "oxfmt": "^0.51.0",
+    "oxlint": "^1.66.0"
+  }
+}

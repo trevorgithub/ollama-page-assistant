@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ollama Page Assistant</title>
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- ── Header ─────────────────────────────────────────── -->
+      <header class="header">
+        <div class="header-left">
+          <span class="logo" aria-hidden="true">◈</span>
+          <span class="header-title">Page Assistant</span>
+        </div>
+        <div class="header-right">
+          <select id="model-select" class="model-select" title="Active model"></select>
+          <button
+            id="settings-btn"
+            type="button"
+            class="icon-btn"
+            title="Settings"
+            aria-label="Open settings"
+          >
+            ⚙
+          </button>
+        </div>
+      </header>
+
+      <!-- ── Page info ──────────────────────────────────────── -->
+      <div class="page-info">
+        <div id="page-title" class="page-title" title=""></div>
+        <div id="page-url" class="page-url" title=""></div>
+      </div>
+
+      <!-- ── Element selection ──────────────────────────────── -->
+      <div class="section selection-section">
+        <!-- No selection saved yet -->
+        <div id="state-no-selection" class="selection-row">
+          <span class="selection-hint">Entire page</span>
+          <button id="pick-element-btn" type="button" class="btn btn-outline btn-sm">
+            Pick element
+          </button>
+        </div>
+
+        <!-- A saved selection exists -->
+        <div id="state-has-selection" class="selection-row" hidden>
+          <div class="selection-chip">
+            <span class="chip-icon" aria-hidden="true">◎</span>
+            <span id="selection-label" class="chip-label" title=""></span>
+          </div>
+          <div class="selection-actions">
+            <button id="change-selection-btn" type="button" class="btn btn-outline btn-sm">
+              Change
+            </button>
+            <button id="clear-selection-btn" type="button" class="btn btn-ghost btn-sm">
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <!-- Picker active -->
+        <div id="state-picker-active" class="picker-hint" hidden>
+          <span class="pulse-dot" aria-hidden="true"></span>
+          Click an element on the page &nbsp;·&nbsp; <kbd>Esc</kbd> to cancel
+        </div>
+
+        <!-- Selector miss warning -->
+        <div id="selector-miss-warning" class="inline-warning" hidden>
+          ⚠ Saved element not found — using full page
+        </div>
+      </div>
+
+      <!-- ── Detail level ─────────────────────────────────────── -->
+      <div class="detail-bar">
+        <fieldset class="segmented" aria-label="Summary detail level">
+          <label class="seg-option">
+            <input type="radio" name="summary-detail" value="brief" />
+            <span>Brief</span>
+          </label>
+          <label class="seg-option">
+            <input type="radio" name="summary-detail" value="standard" />
+            <span>Standard</span>
+          </label>
+          <label class="seg-option">
+            <input type="radio" name="summary-detail" value="detailed" />
+            <span>Detailed</span>
+          </label>
+        </fieldset>
+      </div>
+
+      <!-- ── Primary action ─────────────────────────────────── -->
+      <div class="action-bar">
+        <button id="summarize-btn" type="button" class="btn btn-primary btn-full">
+          <span aria-hidden="true">✦</span> Summarize
+        </button>
+        <button id="stop-btn" type="button" class="btn btn-ghost btn-sm stop-btn" hidden>
+          ■ Stop
+        </button>
+      </div>
+
+      <!-- ── Stale-content banner ──────────────────────────── -->
+      <div id="stale-banner" class="stale-banner" hidden>
+        <span class="stale-icon" aria-hidden="true">⏱</span>
+        <span class="stale-text">From: <span id="stale-from" class="stale-from"></span></span>
+        <button
+          id="stale-clear-btn"
+          type="button"
+          class="btn btn-ghost btn-sm"
+          aria-label="Clear stale results"
+        >
+          Clear
+        </button>
+      </div>
+
+      <!-- ── Summary response ───────────────────────────────── -->
+      <div id="response-section" class="section response-section" hidden>
+        <div class="response-header">
+          <span class="response-label">Summary</span>
+          <div class="response-actions">
+            <button
+              id="copy-response-btn"
+              type="button"
+              class="btn btn-ghost btn-sm"
+              title="Copy to clipboard"
+            >
+              Copy
+            </button>
+            <button
+              id="clear-response-btn"
+              type="button"
+              class="btn btn-ghost btn-sm"
+              title="Dismiss"
+              aria-label="Dismiss summary"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+        <div id="response-content" class="response-text"></div>
+      </div>
+
+      <!-- ── Q & A ──────────────────────────────────────────── -->
+      <div class="section qa-section">
+        <label class="section-label" for="qa-input">Ask about this page</label>
+        <textarea
+          id="qa-input"
+          class="qa-textarea"
+          placeholder="Type a question… (Ctrl+Enter to send)"
+          rows="3"
+          spellcheck="true"
+        ></textarea>
+        <div class="qa-footer">
+          <span class="qa-hint">Ctrl+Enter to send</span>
+          <button id="qa-send-btn" type="button" class="btn btn-primary btn-sm">Ask</button>
+        </div>
+        <div id="qa-response" class="response-text qa-response" hidden></div>
+      </div>
+
+      <!-- ── Status bar ─────────────────────────────────────── -->
+      <div class="status-bar">
+        <span id="status-text" class="status-text"></span>
+      </div>
+    </div>
+    <!-- /#app -->
+
+    <script src="sidepanel.js"></script>
+  </body>
+</html>

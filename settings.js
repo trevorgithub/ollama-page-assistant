@@ -6,6 +6,8 @@ const DEFAULT_ENDPOINT = 'http://localhost:11434';
 const $ = (id) => document.getElementById(id);
 const el = {
   endpointInput: $('endpoint-input'),
+  apiKeyInput: $('api-key-input'),
+  apiKeyToggle: $('api-key-toggle'),
   testBtn: $('test-btn'),
   connectionStatus: $('connection-status'),
   modelsLoading: $('models-loading'),
@@ -28,6 +30,7 @@ const el = {
 async function loadSettings() {
   const d = await chrome.storage.local.get([
     'endpoint',
+    'apiKey',
     'defaultModel',
     'models',
     'pageSelections',
@@ -36,6 +39,7 @@ async function loadSettings() {
   ]);
   return {
     endpoint: d.endpoint ?? DEFAULT_ENDPOINT,
+    apiKey: d.apiKey ?? '',
     defaultModel: d.defaultModel ?? '',
     models: d.models ?? [],
     pageSelections: d.pageSelections ?? {},
@@ -51,6 +55,9 @@ async function saveSettings(patch) {
 // ─── Ollama API ───────────────────────────────────────────────────────────────
 
 function ollamaError(status) {
+  if (status === 401) {
+    return new Error('Ollama rejected the request (401 Unauthorized). Check the API key.');
+  }
   if (status === 403) {
     return new Error(
       'Ollama blocked the request (403 Forbidden). ' +
@@ -61,8 +68,14 @@ function ollamaError(status) {
   return new Error(`HTTP ${status}`);
 }
 
-async function fetchModels(endpoint) {
+/** Returns an Authorization header object when an API key is configured. */
+function authHeaders(apiKey) {
+  return apiKey ? { Authorization: `Bearer ${apiKey}` } : {};
+}
+
+async function fetchModels(endpoint, apiKey = '') {
   const res = await fetch(`${endpoint}/api/tags`, {
+    headers: authHeaders(apiKey),
     signal: AbortSignal.timeout(6_000),
   });
   if (!res.ok) throw ollamaError(res.status);
@@ -205,10 +218,11 @@ function truncate(s, n) {
 
 async function testConnection() {
   const endpoint = el.endpointInput.value.trim() || DEFAULT_ENDPOINT;
+  const apiKey = el.apiKeyInput.value.trim();
   el.testBtn.disabled = true;
   setConnectionStatus('Testing…');
   try {
-    const models = await fetchModels(endpoint);
+    const models = await fetchModels(endpoint, apiKey);
     setConnectionStatus(
       `✓ Connected — ${models.length} model${models.length === 1 ? '' : 's'} available`,
       'success',
@@ -222,11 +236,12 @@ async function testConnection() {
 
 async function refreshModels() {
   const endpoint = el.endpointInput.value.trim() || DEFAULT_ENDPOINT;
+  const apiKey = el.apiKeyInput.value.trim();
   el.refreshModelsBtn.disabled = true;
   showModelsLoading(true);
   showModelsError('');
   try {
-    const models = await fetchModels(endpoint);
+    const models = await fetchModels(endpoint, apiKey);
     const currentDefault = el.defaultModelSelect.value;
     await saveSettings({ models });
     populateDefaultModelSelect(models, currentDefault);
@@ -244,11 +259,12 @@ async function refreshModels() {
 
 async function saveAll() {
   const endpoint = el.endpointInput.value.trim() || DEFAULT_ENDPOINT;
+  const apiKey = el.apiKeyInput.value.trim();
   const defaultModel = el.defaultModelSelect.value;
   const summaryDetail =
     document.querySelector('[name="summary-detail"]:checked')?.value ?? 'standard';
 
-  await saveSettings({ endpoint, defaultModel, summaryDetail });
+  await saveSettings({ endpoint, apiKey, defaultModel, summaryDetail });
   setSaveStatus('✓ Saved');
 }
 
@@ -283,6 +299,7 @@ async function init() {
   const settings = await loadSettings();
 
   el.endpointInput.value = settings.endpoint;
+  el.apiKeyInput.value = settings.apiKey;
 
   // Summary detail level
   const detailRadio = document.querySelector(
@@ -295,7 +312,7 @@ async function init() {
   // Try to refresh models from Ollama; fall back to cached list
   let models = settings.models;
   try {
-    models = await fetchModels(settings.endpoint);
+    models = await fetchModels(settings.endpoint, settings.apiKey);
     await saveSettings({ models });
     setConnectionStatus(
       `✓ Connected — ${models.length} model${models.length === 1 ? '' : 's'} available`,
@@ -319,6 +336,13 @@ async function init() {
   el.testBtn.addEventListener('click', testConnection);
   el.refreshModelsBtn.addEventListener('click', refreshModels);
   el.saveBtn.addEventListener('click', saveAll);
+
+  el.apiKeyToggle.addEventListener('click', () => {
+    const isHidden = el.apiKeyInput.type === 'password';
+    el.apiKeyInput.type = isHidden ? 'text' : 'password';
+    el.apiKeyToggle.textContent = isHidden ? 'Hide' : 'Show';
+    el.apiKeyToggle.setAttribute('aria-pressed', String(isHidden));
+  });
 
   // Delegate table delete buttons
   document.addEventListener('click', handleTableActions);

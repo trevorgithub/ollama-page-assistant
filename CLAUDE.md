@@ -20,11 +20,11 @@ This is a Chrome Manifest V3 extension. There is no bundler; every `.js` file is
 
 **Three execution contexts that cannot share memory:**
 
-| Context | File(s) | Can reach |
-|---|---|---|
-| Service worker | `background.js` | `chrome.*` APIs only |
-| Content script | `lib/Readability.js`, `content.js` | Page DOM + `chrome.runtime` |
-| Extension pages | `sidepanel.js`, `settings.js` | `chrome.*` APIs + `fetch` to localhost |
+| Context         | File(s)                            | Can reach                              |
+| --------------- | ---------------------------------- | -------------------------------------- |
+| Service worker  | `background.js`                    | `chrome.*` APIs only                   |
+| Content script  | `lib/Readability.js`, `content.js` | Page DOM + `chrome.runtime`            |
+| Extension pages | `sidepanel.js`, `settings.js`      | `chrome.*` APIs + `fetch` to localhost |
 
 **Why `background.js` exists:** Content scripts cannot message extension pages directly. `background.js` acts purely as a relay — it re-broadcasts any content-script message to `chrome.runtime` with the originating `tabId` attached, so `sidepanel.js` can filter by tab.
 
@@ -46,6 +46,7 @@ Message types (side panel handles): `ELEMENT_SELECTED`, `PICKER_CANCELLED`.
 ```jsonc
 {
   "endpoint": "http://localhost:11434",
+  "apiKey": "",                           // Bearer token for hosted API or reverse proxy; empty = no auth
   "defaultModel": "llama3.2",
   "models": ["llama3.2", ...],        // cached from Ollama /api/tags
   "pageSelections": {

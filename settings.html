@@ -34,6 +34,33 @@
             </div>
             <p id="connection-status" class="field-hint" aria-live="polite"></p>
           </div>
+
+          <div class="field">
+            <label class="label" for="api-key-input">API key</label>
+            <div class="input-row">
+              <input
+                id="api-key-input"
+                class="input"
+                type="password"
+                placeholder="Leave blank for local Ollama"
+                autocomplete="off"
+                spellcheck="false"
+              />
+              <button
+                id="api-key-toggle"
+                type="button"
+                class="btn btn-outline"
+                aria-pressed="false"
+              >
+                Show
+              </button>
+            </div>
+            <p class="field-hint">
+              Required when using the
+              <a href="https://ollama.com" target="_blank" rel="noopener">ollama.com</a> hosted API
+              or a reverse proxy with bearer token auth. Leave blank otherwise.
+            </p>
+          </div>
         </section>
 
         <!-- ── Models ────────────────────────────────────────────── -->

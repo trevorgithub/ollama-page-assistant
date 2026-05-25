@@ -86,6 +86,7 @@ function normalizeUrl(url) {
 async function getSettings() {
   const d = await chrome.storage.local.get([
     'endpoint',
+    'apiKey',
     'defaultModel',
     'models',
     'pageSelections',
@@ -94,6 +95,7 @@ async function getSettings() {
   ]);
   return {
     endpoint: d.endpoint ?? DEFAULT_ENDPOINT,
+    apiKey: d.apiKey ?? '',
     defaultModel: d.defaultModel ?? '',
     models: d.models ?? [],
     pageSelections: d.pageSelections ?? {},
@@ -150,6 +152,11 @@ async function savePageModel(url, model) {
  * running Ollama and restart it.
  */
 function ollamaError(status, body = '') {
+  if (status === 401) {
+    return new Error(
+      'Ollama rejected the request (401 Unauthorized). Check the API key in Settings.',
+    );
+  }
   if (status === 403) {
     return new Error(
       'Ollama blocked this request (403). ' +
@@ -163,8 +170,14 @@ function ollamaError(status, body = '') {
   return new Error(`Ollama ${status}${detail}`);
 }
 
-async function fetchModels(endpoint) {
+/** Returns an Authorization header object when an API key is configured. */
+function authHeaders(apiKey) {
+  return apiKey ? { Authorization: `Bearer ${apiKey}` } : {};
+}
+
+async function fetchModels(endpoint, apiKey = '') {
   const res = await fetch(`${endpoint}/api/tags`, {
+    headers: authHeaders(apiKey),
     signal: AbortSignal.timeout(5_000),
   });
   if (!res.ok) throw ollamaError(res.status);
@@ -209,14 +222,14 @@ async function* readNDJSONStream(reader) {
  * Calls /api/chat with stream:true and yields each token string as it arrives.
  * Throws on network error or non-2xx response; AbortError is propagated.
  */
-async function* streamChat(endpoint, model, messages) {
+async function* streamChat(endpoint, model, messages, apiKey = '') {
   abortController = new AbortController();
 
   let res;
   try {
     res = await fetch(`${endpoint}/api/chat`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders(apiKey) },
       body: JSON.stringify({ model, messages, stream: true }),
       signal: abortController.signal,
     });
@@ -443,7 +456,7 @@ async function summarize() {
   el.responseSection.hidden = false;
 
   const { completed, elapsedMs } = await renderStream(
-    streamChat(settings.endpoint, model, messages),
+    streamChat(settings.endpoint, model, messages, settings.apiKey),
     el.responseContent,
     'Generating summary',
   );
@@ -510,7 +523,7 @@ async function ask() {
   setStatus('Thinking…');
 
   const { completed, elapsedMs } = await renderStream(
-    streamChat(settings.endpoint, model, messages),
+    streamChat(settings.endpoint, model, messages, settings.apiKey),
     el.qaResponse,
     'Thinking',
   );
@@ -622,7 +635,7 @@ async function loadForTab(tab) {
   // Fetch/refresh models from Ollama
   let models = settings.models;
   try {
-    models = await fetchModels(settings.endpoint);
+    models = await fetchModels(settings.endpoint, settings.apiKey);
     await chrome.storage.local.set({ models });
     setStatus(`Ollama ready · ${models.length} model${models.length === 1 ? '' : 's'}`, 'success');
   } catch {

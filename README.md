@@ -63,12 +63,50 @@ The ◈ icon will appear in your toolbar.
 
 Accessible via ⚙ in the side panel or `chrome://extensions` → Details → Extension options.
 
-| Setting                      | Description                                             |
-| ---------------------------- | ------------------------------------------------------- |
-| **Server endpoint**          | Ollama API base URL (default: `http://localhost:11434`) |
-| **Default model**            | Used for all pages unless a per-page override is set    |
-| **Per-page model overrides** | View and delete models saved for individual pages       |
-| **Saved element selections** | View and delete remembered element picks                |
+| Setting                      | Description                                                                                                                        |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Server endpoint**          | Ollama API base URL (default: `http://localhost:11434`)                                                                            |
+| **API key**                  | Bearer token — required when using the ollama.com hosted API or a reverse proxy with bearer token auth (see [Security](#security)) |
+| **Default model**            | Used for all pages unless a per-page override is set                                                                               |
+| **Per-page model overrides** | View and delete models saved for individual pages                                                                                  |
+| **Saved element selections** | View and delete remembered element picks                                                                                           |
+
+---
+
+## Security
+
+### Local Ollama instance
+
+Local Ollama binds to `127.0.0.1` by default, so it is not reachable from other machines. However it has **no built-in authentication** — any local process, and any browser extension with localhost permissions, can call it freely.
+
+The main exposure vector from the browser is **`OLLAMA_ORIGINS`**. Because the side panel runs as an extension page (origin `chrome-extension://<id>`), Ollama must be told to accept that origin or it returns `403`. The broadest setting is:
+
+```bash
+OLLAMA_ORIGINS=chrome-extension://*   # ⚠ allows ALL extensions
+```
+
+You can narrow this to your specific extension ID, which you can find at `chrome://extensions` after loading the extension:
+
+```bash
+OLLAMA_ORIGINS=chrome-extension://abcdefghijklmnopqrstuvwxyzabcdef
+```
+
+This means only this extension can make cross-origin requests to Ollama from the browser. Other installed extensions — and all web pages — will receive `403`.
+
+**However, there are two important caveats with pinning a specific ID:**
+
+- **Dev mode IDs are machine-local.** When an extension is loaded unpacked, Chrome derives its ID from the absolute path of the extension folder on disk. The ID is stable as long as the folder doesn't move, but it will differ between machines and won't match what the Chrome Web Store would assign.
+- **The dev ID and the published ID are different.** The Web Store assigns a new ID (based on its own key pair) the first time the extension is published, and that ID never changes across updates. If you later publish this extension, you would need to update `OLLAMA_ORIGINS` to the new ID.
+
+In practice, for a personal extension used only in developer mode on one machine, pinning the ID is worthwhile. For anything shared or published, `chrome-extension://*` is the pragmatic choice — and the actual risk is low since it only affects extensions the user has explicitly installed.
+
+For stronger protection (e.g. if you expose Ollama beyond localhost), place a reverse proxy such as nginx in front of it with HTTP basic auth or a bearer token check.
+
+### ollama.com hosted API
+
+If you point the **Server endpoint** at `https://ollama.com/api` instead of a local instance, you will need an API key from [ollama.com](https://ollama.com). Enter it in the **API key** field in Settings — the extension will send it as `Authorization: Bearer <key>` with every request.
+
+> **Note:** `chrome.storage.local` is sandboxed to this extension and is not accessible to web pages.
 
 ---
 
@@ -113,6 +151,7 @@ Side panel  ──fetch──►  Ollama (localhost:11434)
 ```jsonc
 {
   "endpoint": "http://localhost:11434",
+  "apiKey": "", // empty = no auth
   "defaultModel": "llama3.2",
   "models": ["llama3.2", "mistral", "..."], // cached from /api/tags
   "pageSelections": {

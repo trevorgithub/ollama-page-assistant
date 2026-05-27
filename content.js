@@ -162,6 +162,9 @@ function onMouseOut() {
 }
 
 function onPickerClick(e) {
+  // Ignore non-primary button clicks (right-click, middle-click, etc.)
+  if (e.button !== 0) return;
+
   e.preventDefault();
   e.stopImmediatePropagation();
 
@@ -172,22 +175,30 @@ function onPickerClick(e) {
 
   exitPickerMode();
 
-  chrome.runtime.sendMessage({
-    type: 'ELEMENT_SELECTED',
-    tabId: currentTabId,
-    selector,
-    label,
-    text,
-  });
+  chrome.runtime
+    .sendMessage({
+      type: 'ELEMENT_SELECTED',
+      tabId: currentTabId,
+      selector,
+      label,
+      text,
+    })
+    .catch(() => {
+      // Side panel may have been closed; nothing to do.
+    });
 }
 
 function onPickerKeydown(e) {
   if (e.key === 'Escape') {
+    e.preventDefault();
+    e.stopImmediatePropagation();
     exitPickerMode();
-    chrome.runtime.sendMessage({
-      type: 'PICKER_CANCELLED',
-      tabId: currentTabId,
-    });
+    chrome.runtime
+      .sendMessage({
+        type: 'PICKER_CANCELLED',
+        tabId: currentTabId,
+      })
+      .catch(() => {});
   }
 }
 
@@ -195,8 +206,10 @@ function enterPickerMode() {
   document.body.style.cursor = 'crosshair';
   document.addEventListener('mouseover', onMouseOver, true);
   document.addEventListener('mouseout', onMouseOut, true);
-  document.addEventListener('click', onPickerClick, true);
-  document.addEventListener('keydown', onPickerKeydown, true);
+  // Use window (not document) so we fire in capture before any page-level
+  // document capture handlers that might call stopImmediatePropagation().
+  window.addEventListener('click', onPickerClick, true);
+  window.addEventListener('keydown', onPickerKeydown, true);
 }
 
 function exitPickerMode() {
@@ -205,8 +218,8 @@ function exitPickerMode() {
   hoveredEl = null;
   document.removeEventListener('mouseover', onMouseOver, true);
   document.removeEventListener('mouseout', onMouseOut, true);
-  document.removeEventListener('click', onPickerClick, true);
-  document.removeEventListener('keydown', onPickerKeydown, true);
+  window.removeEventListener('click', onPickerClick, true);
+  window.removeEventListener('keydown', onPickerKeydown, true);
 }
 
 // ─── Message handler ──────────────────────────────────────────────────────────

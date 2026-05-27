@@ -701,6 +701,17 @@ async function init() {
 
   // ── Event listeners ───────────────────────────────────────────────────────
 
+  // Esc pressed while focus is in the side panel (the common case after
+  // clicking "Pick Element") should cancel picker mode directly here.
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !el.pickerActive.hidden) {
+      e.preventDefault();
+      msgContentScript({ type: 'EXIT_PICKER_MODE' }).catch(() => {});
+      exitPickerUI();
+      updateSelectionUI(currentSelection);
+    }
+  });
+
   el.settingsBtn.addEventListener('click', () => {
     chrome.runtime.openOptionsPage();
   });

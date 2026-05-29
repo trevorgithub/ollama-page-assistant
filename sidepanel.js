@@ -247,7 +247,15 @@ async function* streamChat(endpoint, model, messages, apiKey = '') {
   try {
     for await (const obj of readNDJSONStream(res.body.getReader())) {
       if (obj.message?.content) yield obj.message.content;
-      if (obj.done) return;
+      if (obj.done) {
+        if (obj.done_reason === 'length') {
+          throw new Error(
+            'Generation stopped: model context window limit reached. ' +
+              'Try selecting a smaller section of the page, or switch to a model with a larger context window.',
+          );
+        }
+        return;
+      }
     }
   } finally {
     abortController = null;
